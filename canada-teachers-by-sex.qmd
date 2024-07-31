@@ -2,25 +2,53 @@
 title: "Canadian Teachers by Sex"
 author: "John Menzies"
 format: html
+execute: 
+  echo: false
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
 
 ```{r}
-1
+#| label: setup
+#| message: false
+library(tidyverse)
+library(stringr)
 ```
-
-You can add options to executable code like this 
 
 ```{r}
-#| echo: false
-2 * 2
+#| label: data-load
+#| message: false
+df <- read_csv("./data/14100022-eng/14100022.csv")
+df <- janitor::clean_names(df)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+
+```{r}
+#| label: graphic
+df |> 
+  filter(
+    geo == "Canada",
+    labour_force_characteristics == "Labour force",
+    age_group == "15 years and over",
+    uom == "Persons",
+    sex != "Both sexes",
+    str_detect(north_american_industry_classification_system_naics, "Education")
+  ) |> 
+  mutate(ref_date = ym(ref_date) )|> 
+  ggplot(aes(x = ref_date, y = value, fill = sex)) +
+  geom_area(position = "stack", alpha = 0.6) +  # Stacked area plot
+  geom_line(position = "stack", aes(color = sex), linewidth = 1) +  # Line plot
+  labs(
+    title = "Employment in Educational Services in Canada by Sex",
+    x = "Date",
+    y = "People employed over the age of 15, thousand people",
+    fill = "Sex",
+    color = "Sex"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+
+```
